@@ -1,1 +1,48 @@
 
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#10111b">
+<title>AI Motion Studio 4K</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#10111b;color:#fff;font-family:Arial,sans-serif;padding:20px}h1{font-size:25px;color:#a99bff}p{color:#c6c6d8}.card{background:#1c1e2d;border:1px solid #383950;border-radius:16px;padding:16px;margin:16px 0}button,.upload{display:block;width:100%;padding:14px;margin:10px 0;border:0;border-radius:10px;background:#7866ed;color:white;font-weight:bold;font-size:15px;text-align:center}input,select{width:100%;padding:12px;border-radius:8px;margin:8px 0;background:#292b3d;color:white;border:1px solid #50516a}img{width:100%;max-height:400px;object-fit:contain;border-radius:10px;display:none}small{color:#aaa}button:disabled{opacity:.5}
+</style>
+</head>
+<body>
+<h1>✨ AI Motion Studio 4K</h1>
+<p>Photo Enhancer • Motion Video Studio</p>
+<div class="card">
+<h3>1. अपनी फोटो चुनें</h3>
+<input type="file" id="photo" accept="image/*">
+<img id="preview" alt="आपकी चुनी हुई फोटो">
+</div>
+<div class="card">
+<h3>2. Camera Motion चुनें</h3>
+<select id="motion"><option value="zoom">Cinematic Zoom In</option><option value="out">Zoom Out</option><option value="pan">Camera Pan</option></select>
+<button id="play">▶ Motion Preview चलाएँ</button>
+<small>यह शुरुआती प्रीव्यू है; AI इंसान को चलाने वाला फीचर अभी जुड़ा नहीं है।</small>
+</div>
+<div class="card">
+<h3>3. फोटो का रिज़ॉल्यूशन</h3>
+<select id="resolution"><option value="2160">4K — 2160px ऊँचाई</option><option value="1080">Full HD — 1080px ऊँचाई</option></select>
+<button id="enhance">फोटो एक्सपोर्ट करें</button>
+<small>यह आकार बदलकर एक्सपोर्ट करता है, वास्तविक AI detail restoration नहीं।</small>
+</div>
+<div class="card">
+<h3>4. वीडियो</h3>
+<button id="video">10 सेकंड का Motion वीडियो रिकॉर्ड करें</button>
+<small>वीडियो रिकॉर्डिंग ब्राउज़र और मोबाइल के MediaRecorder सपोर्ट पर निर्भर है।</small>
+</div>
+<p id="status">अपनी फोटो चुनकर शुरुआत करें।</p>
+<script>
+const photo=document.getElementById('photo'),img=document.getElementById('preview'),status=document.getElementById('status');
+let url=null;
+photo.onchange=()=>{if(url)URL.revokeObjectURL(url);if(photo.files[0]){url=URL.createObjectURL(photo.files[0]);img.src=url;img.style.display='block';img.style.transform='none';status.textContent='फोटो तैयार है। Motion चुनें।'}};
+document.getElementById('play').onclick=()=>{if(!url){status.textContent='पहले फोटो चुनें।';return}img.style.transition='transform 3s ease';const m=document.getElementById('motion').value;img.style.transform=m==='zoom'?'scale(1.15)':m==='out'?'scale(.9)':'translateX(12px) scale(1.05)';status.textContent='Motion Preview चल रहा है।';setTimeout(()=>{img.style.transform='none'},3000)};
+document.getElementById('enhance').onclick=()=>{if(!url){status.textContent='पहले फोटो चुनें।';return}const size=Number(document.getElementById('resolution').value);const image=new Image();image.onload=()=>{const ratio=Math.min(1,size/image.height);const w=Math.round(image.width*ratio),h=Math.round(image.height*ratio);const c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(image,0,0,w,h);c.toBlob(b=>{const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='motion-studio-'+size+'px.jpg';a.click();status.textContent='फोटो एक्सपोर्ट हो गई। यह AI enhancement नहीं है।'},'image/jpeg',.95)};image.src=url};
+document.getElementById('video').onclick=()=>{if(!url){status.textContent='पहले फोटो चुनें।';return}if(!HTMLCanvasElement.prototype.captureStream||!window.MediaRecorder){status.textContent='आपके ब्राउज़र में वीडियो रिकॉर्डिंग समर्थित नहीं है।';return}const c=document.createElement('canvas');c.width=720;c.height=1280;const ctx=c.getContext('2d'),im=new Image();im.onload=()=>{const stream=c.captureStream(24);let rec;try{rec=new MediaRecorder(stream)}catch(e){status.textContent='वीडियो रिकॉर्डिंग शुरू नहीं हो सकी।';return}const chunks=[];rec.ondataavailable=e=>{if(e.data.size)chunks.push(e.data)};rec.onstop=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(chunks,{type:rec.mimeType||'video/webm'}));a.download='motion-studio-video.webm';a.click();status.textContent='वीडियो सेव हो गया।'};rec.start();const start=performance.now();function frame(t){const p=Math.min((t-start)/10000,1);ctx.fillStyle='#000';ctx.fillRect(0,0,c.width,c.height);const scale=1+.12*p,sw=c.width/scale,sh=c.height/scale;const ar=im.width/im.height;let dw=sw,dh=sh;if(ar>sw/sh){dh=sw/ar}else{dw=sh*ar}ctx.drawImage(im,(c.width-dw)/2,(c.height-dh)/2,dw,dh);if(p<1)requestAnimationFrame(frame);else rec.stop()}requestAnimationFrame(frame);status.textContent='वीडियो बन रहा है… लगभग 10 सेकंड प्रतीक्षा करें।'};im.src=url};
+</script>
+</body>
+</html>
